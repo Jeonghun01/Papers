@@ -1,0 +1,23 @@
+Image Style Transfer Using Convolutional Neural Networks
+
+Leon A. Gatys
+ Centre for Integrative Neuroscience, University of T¨ ubingen, Germany
+ Bernstein Center for Computational Neuroscience, T¨ubingen, Germany
+ Graduate School of Neural Information Processing, University of T¨ ubingen, Germany
+ leon.gatys@bethgelab.org
+Alexander S. Ecker
+ Centre for Integrative Neuroscience, University of T¨ ubingen, Germany
+ Bernstein Center for Computational Neuroscience, T¨ ubingen, Germany
+ Max Planck Institute for Biological Cybernetics, T¨ ubingen, Germany
+ Baylor College of Medicine, Houston, TX, USA
+Matthias Bethge
+ Centre for Integrative Neuroscience, University of T¨ ubingen, Germany
+ Bernstein Center for Computational Neuroscience, T¨ ubingen, Germany
+ Max Planck Institute for Biological Cybernetics, T¨ ubingen, Germany
+-----------------------------------------------------------------------------------------------------
+Colab environment - T4 GPU
+  501 epochs
+  Run time : 1:12:42
+  Content Loss : 0.5116550922393799
+  Style Loss : 4.1273125361840357e-07
+  Total loss : 0.9243863821029663
