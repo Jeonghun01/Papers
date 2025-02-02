@@ -59,7 +59,7 @@ def train_model():
 
     optimizer = optim.LBFGS([gen], lr = learning_rate)
 
-    def compute_loss():
+    def compute_loss(): # refactoring
       content_image_list = style_transfer.forward(content_image, 'Content')
       content_gen_list   = style_transfer.forward(gen, 'Content')
       style_image_list   = style_transfer.forward(style_image, 'Style')
