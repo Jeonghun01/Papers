@@ -44,7 +44,6 @@ def train_model():
     alpha           = 1
     beta            = 1e6
     learning_rate   = 1
-    #gen = torch.randn(1, 3, 512, 512).requires_grad_(True)
 
     save_root = f'{alpha}_{beta}_{learning_rate}'
     os.makedirs(save_root, exist_ok = True)
@@ -60,9 +59,7 @@ def train_model():
 
     optimizer = optim.LBFGS([gen], lr = learning_rate)
 
-    def closure():
-      optimizer.zero_grad()
-
+    def compute_loss():
       content_image_list = style_transfer.forward(content_image, 'Content')
       content_gen_list   = style_transfer.forward(gen, 'Content')
       style_image_list   = style_transfer.forward(style_image, 'Style')
@@ -78,7 +75,11 @@ def train_model():
          loss_S += style_loss.forward(S, G)
   
       total_loss = alpha * loss_C + beta * loss_S
+      return total_loss, loss_C, loss_S
 
+    def closure():
+      optimizer.zero_grad()
+      total_loss, loss_C, loss_S = compute_loss()
       total_loss.backward()
 
       return total_loss
@@ -92,21 +93,7 @@ def train_model():
       if epoch % 100 == 0:
         with torch.no_grad():
           # same as closure for computing loss
-          content_image_list = style_transfer.forward(content_image, 'Content')
-          content_gen_list   = style_transfer.forward(gen, 'Content')
-          style_image_list   = style_transfer.forward(style_image, 'Style')
-          style_gen_list     = style_transfer.forward(gen, 'Style')
-
-          loss_C             = 0
-          loss_S             = 0
-          total_loss         = 0
-
-          for C, G in zip(content_image_list, content_gen_list):
-            loss_C += content_loss.forward(C, G)
-          for S, G in zip(style_image_list, style_gen_list):
-            loss_S += style_loss.forward(S, G)
-  
-          total_loss = alpha * loss_C + beta * loss_S
+          total_loss, loss_C, loss_S = compute_loss()
 
           print("Content Loss :", loss_C.item())
           print("Style Loss :", loss_S.item())
