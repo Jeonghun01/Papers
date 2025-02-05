@@ -17,12 +17,12 @@ class Encoder(nn.Module):
         h, _       = self.BRNN(embedded_x) # (batch, sequence length, 2 * Tx)
         return h
 
+
 """
 Context
     Compute amount of attention
     e = energies -> alpha -> context
 """
-
 def concat_c(prev_s:torch.Tensor, h:torch.Tensor):
     prev_s = prev_s.unsqueeze(1)
     prev_s = prev_s.repeat(1, h.size(1), 1)
@@ -50,14 +50,13 @@ class Context(nn.Module):
 
         return context # (batch, Ty + 2Tx, 2Tx)
 
+
 """
 Decoder
     Use RNN Unit (different from paper that use unit not saved on pytorch)
     preds : the results that have most probability (save pred on this list) and return
     update prev_s and return
 """
-
-
 def concat_d(prev_s:torch.Tensor, context:torch.Tensor):
     prev_s = prev_s.unsqueeze(2) # (m, Ty, 1)
     prev_s = prev_s.repeat(1, 1, context.size(2))
