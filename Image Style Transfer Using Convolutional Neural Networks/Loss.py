@@ -5,10 +5,9 @@ import torch.nn.functional as F
 class ContentLoss(nn.Module):
     def __init__(self, ):
         super(ContentLoss, self).__init__()
-        pass
 
     def forward(self, C:torch.Tensor, G:torch.Tensor):
-        # do not need reshape necessary
+        # do not need to reshape necessary
         loss = F.mse_loss(C, G)
         return loss
         
@@ -16,8 +15,7 @@ class ContentLoss(nn.Module):
 class StyleLoss(nn.Module):
     def __init__(self, ):
         super(StyleLoss, self).__init__()
-        pass
-
+    
     def gram_matrix(self, x:torch.Tensor):
         """
             x shape - (b, c, H, W)
