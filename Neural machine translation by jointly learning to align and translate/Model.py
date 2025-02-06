@@ -65,23 +65,23 @@ def concat_d(prev_s:torch.Tensor, context:torch.Tensor):
     return concat
 
 class Decoder(nn.Module):
-    def __init__(self, prev_s, context):
+    def __init__(self, prev_s, context, Ty):
         super(Decoder, self).__init__()
-        self.RNNCell = nn.RNNCell(input_size = concat_d(prev_s, context).view(prev_s.size(0), -1).size(1), hidden_size = 1000)
-        self.Linear = nn.Linear(in_features = 1000, out_features = 1000)
+        self.RNNCell = nn.RNNCell(input_size = concat_d(prev_s, context).view(prev_s.size(0), -1).size(1), hidden_size = Ty)
+        self.Linear = nn.Linear(in_features = Ty, out_features = prev_s.size(1))
         self.Softmax = nn.Softmax(dim = -1)
 
-    def forward(self, prev_s, context, preds):
+    def forward(self, prev_s, context):
         inputs = concat_d(prev_s, context).view(prev_s.size(0), -1)
         state = self.RNNCell(inputs) # (m, 1000)
         prev_s = state
 
-        pred = self.Linear(state)
-        pred = self.Softmax(pred)
-        pred, _ = torch.max(pred, dim = 1)
-        preds.append(pred)
+        preds = self.Linear(state)
+        preds = self.Softmax(preds)
 
-        return prev_s, preds
+        result, _ = torch.max(preds, dim = 1)
+
+        return prev_s, result, preds
         
 
 
