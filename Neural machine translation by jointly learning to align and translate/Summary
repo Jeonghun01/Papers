@@ -7,6 +7,8 @@ KyungHyun Cho YoshuaBengio
 Universit´e de Montr´ eal
 
 ---------------------------------------------------------------------------------------------------
+It is about a method(Algorithm) as known as Attention
+
 On paper they use WMT ’14 dataset that contains the following English-French parallel corpora: Europarl (61M words), news
 commentary (5.5M), UN (421M) and two crawled corpora of 90M and 272.5M words respectively, totaling 850M words.
 http://www.statmt.org/wmt14/translation-task.html
