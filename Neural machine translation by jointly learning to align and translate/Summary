@@ -1,0 +1,19 @@
+NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN AND TRANSLATE
+
+Dzmitry Bahdanau
+Jacobs University Bremen, Germany
+
+KyungHyun Cho YoshuaBengio
+Universit´e de Montr´ eal
+
+---------------------------------------------------------------------------------------------------
+It is about a method(Algorithm) as known as Attention
+
+On paper they use WMT ’14 dataset that contains the following English-French parallel corpora: Europarl (61M words), news
+commentary (5.5M), UN (421M) and two crawled corpora of 90M and 272.5M words respectively, totaling 850M words.
+http://www.statmt.org/wmt14/translation-task.html
+
+It is a litte hard to work on local environment cause of dataset so that on this realization i focus on test Encoder-Decoder.
+Check the test.ipynb file please
+
+And also, on paper, when they made model they used some specific formulas on units similar with LSTM, but i use simple RNN Unit.
