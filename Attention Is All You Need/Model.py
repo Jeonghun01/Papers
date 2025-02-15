@@ -10,22 +10,49 @@ d_v     = 64
 d_model = 64 * h
 
 
-
-def Scaled_Dot_Product_Attention(Q:torch.Tensor, K:torch.Tensor, V:torch.Tensor) -> torch.Tensor: # Q, K, V (m, d_model)
-    # Can be recatored to Multi Head Attention once a time i think
-    
-    matmul1 = torch.matmul(Q, K)
-    scale = matmul1 / torch.sqrt(K.size(1))
-    softmax = F.softmax(scale, dim = -1)
-    attention = torch.matmul(softmax, V)
-
-    return attention
-
-class Multi_Head_Attention(): # QW, KW, VW -> (m,d-model) dot (d-model. d_k) -> (m, d_k)
-    pass
-
 def Positional_Encoding():
     pass
+
+
+class Multi_Head_Attention():
+    def __init__(self,):
+        super(Multi_Head_Attention, self).__init__()
+        self.linear_groups = nn.ModuleList([
+            nn.ModuleDict({
+                "linearQ": nn.Linear(in_features = d_model, out_features = d_k, bias = False),
+                "linearK": nn.Linear(in_features = d_model, out_features = d_k, bias = False),
+                "linearV": nn.Linear(in_features = d_model, out_features = d_v, bias = False),
+            })
+            for i in range(h)
+        ])
+        self.MHALinear = nn.Linear(in_features = h*d_v, out_features = d_model, bias = False)
+        
+
+    def forward(self, x):
+        concat_groups = []
+
+        for group in self.linear_groups:
+            Q:torch.Tensor = group["linearQ"](x)
+            K:torch.Tensor = group["linearK"](x)
+            V:torch.Tensor = group["linearV"](x)
+
+            answer_weight = torch.matmul(Q, K.permute(0, 2, 1))
+            scale = answer_weight / torch.sqrt(torch.tensor(d_k, dtype = torch.float32))
+            softmax = F.softmax(scale, dim = -1)
+            attention = torch.matmul(softmax, V)
+
+            concat_groups.append(attention)
+        
+        concat_result = torch.cat(concat_groups, dim = -1)
+        MHA = self.MHALinear(concat_result)
+
+        return MHA
+
+
+
+
+
+
 
 class Encoder(nn.Module):
     def __init__(self,):
@@ -35,8 +62,6 @@ class Encoder(nn.Module):
 
     def forward(self,):
         pass
-
-
 
 
 class Decoder(nn.Module):
