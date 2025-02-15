@@ -35,6 +35,8 @@ Attention Is All You Need
 This paper is about a model as known as Transformer
 
 It is difficult to train model with real data on my local environment, so i did testing model(Encoder and Decoder) and wrote just train code, you can check these at other files
+Loss function is with train.py
+
 On model test, it worked great and had expected results
 
 Still, i should make positional encoding
