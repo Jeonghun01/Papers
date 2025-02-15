@@ -19,9 +19,9 @@ class Multi_Head_Attention():
         super(Multi_Head_Attention, self).__init__()
         self.linear_groups = nn.ModuleList([
             nn.ModuleDict({
-                "linearQ": nn.Linear(in_features = d_model, out_features = d_k, bias = False),
-                "linearK": nn.Linear(in_features = d_model, out_features = d_k, bias = False),
-                "linearV": nn.Linear(in_features = d_model, out_features = d_v, bias = False),
+                f"linearQ_{i + 1}": nn.Linear(in_features = d_model, out_features = d_k, bias = False),
+                f"linearK_{i + 1}": nn.Linear(in_features = d_model, out_features = d_k, bias = False),
+                f"linearV_{i + 1}": nn.Linear(in_features = d_model, out_features = d_v, bias = False),
             })
             for i in range(h)
         ])
@@ -31,20 +31,20 @@ class Multi_Head_Attention():
     def forward(self, x):
         concat_groups = []
 
-        for group in self.linear_groups:
-            Q:torch.Tensor = group["linearQ"](x)
-            K:torch.Tensor = group["linearK"](x)
-            V:torch.Tensor = group["linearV"](x)
+        for i, group in enumerate(self.linear_groups):
+            Q:torch.Tensor = group[f"linearQ_{i + 1}"](x)
+            K:torch.Tensor = group[f"linearK_{i + 1}"](x)
+            V:torch.Tensor = group[f"linearV{i + 1}"](x)
 
-            answer_weight = torch.matmul(Q, K.permute(0, 2, 1))
-            scale = answer_weight / torch.sqrt(torch.tensor(d_k, dtype = torch.float32))
-            softmax = F.softmax(scale, dim = -1)
-            attention = torch.matmul(softmax, V)
+            answer_weight  = torch.matmul(Q, K.permute(0, 2, 1))
+            scale          = answer_weight / torch.sqrt(torch.tensor(d_k, dtype = torch.float32))
+            softmax        = F.softmax(scale, dim = -1)
+            attention      = torch.matmul(softmax, V)
 
             concat_groups.append(attention)
         
-        concat_result = torch.cat(concat_groups, dim = -1)
-        MHA = self.MHALinear(concat_result)
+        concat_result      = torch.cat(concat_groups, dim = -1)
+        MHA                = self.MHALinear(concat_result)
 
         return MHA
 
