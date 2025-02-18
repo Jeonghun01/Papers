@@ -7,4 +7,4 @@ c = # features (amino-acid) = 64
 2. Pair representation
 MSA -> (r, r, c)
 r = # amino-acids
-c = r-r feature (distance)
+c = r-r feature (distance) = 64
