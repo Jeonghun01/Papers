@@ -1,0 +1,10 @@
+1. MSA representation
+FASTA File -> (s, r, c)
+s = # proteins
+r = # amino-acids
+c = # features (amino-acid) = 64
+
+2. Pair representation
+MSA -> (r, r, c)
+r = # amino-acids
+c = r-r feature (distance)
