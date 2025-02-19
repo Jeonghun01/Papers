@@ -26,7 +26,7 @@ class MSARowAttentionWithPairBias(nn.Module):
         ])
         self.output    = nn.Linear(in_features = c * N_head, out_features = c_m)
 
-    def forward(self, msa, pair, c = 32, N_head = 8):
+    def forward(self, msa, pair, c = 32):
         output_list = []
 
         for i, group in enumerate(self.stacks_group):
@@ -51,13 +51,41 @@ class MSARowAttentionWithPairBias(nn.Module):
         return msa_
 
 
-class MSA_column_wise_gated_self_attention(nn.Moudule):
-    def __init__(self,):
-        super(MSA_column_wise_gated_self_attention, self).__init__()
-        pass
+class MSAColumnAttention(nn.Module):
+    def __init__(self, c = 32, N_head = 8):
+        super(MSAColumnAttention, self).__init__()
+        self.stacks_group = nn.ModuleList([
+            nn.ModuleDict({
+                'norm_msa'  : nn.LayerNorm(normalized_shape = c_m),
+                'qkv'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_g'  : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'sigmoid'   : nn.Sigmoid(),
+                'softmax'   : nn.Softmax(dim = -2)
+            })
+            for i in range(N_head)
+        ])
+        self.output    = nn.Linear(in_features = c * N_head, out_features = c_m)
 
-    def forward(self,):
-        pass
+    def forward(self, msa, c = 32):
+        output_list = []
+        msa = msa.permute(1, 0, 2)
+        for i, group in enumerate(self.stacks_group):
+            msa = group['norm_msa'](msa)
+            q = group['qkv'](msa)  
+            k = group['qkv'](msa)
+            v = group['qkv'](msa)
+            g = group['sigmoid'](group['linear_g'](msa))
+            
+            in_softmax = (1/np.sqrt(c)) * (torch.matmul(q, k.transpose(1,2)))
+            a = group['softmax'](in_softmax)
+            o = torch.multiply(g, torch.matmul(a, v))
+
+            output_list.append(o)
+
+        output = torch.cat(output_list, dim = 2)
+        msa_ = self.output(output).permute(1, 0, 2)
+        
+        return msa_
 
 
 class MSA_translation(nn.Module):
