@@ -1,5 +1,5 @@
 1. MSA representation
-FASTA File -> (s, r, c)
+FASTA File -> raw MSA(s, r) -> Embedding -> MSA representation (s, r, c)
 s = # proteins
 r = # amino-acids
 c = # features (amino-acid) = 64
