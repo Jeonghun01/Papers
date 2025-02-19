@@ -8,3 +8,5 @@ c = # features (amino-acid) = 64
 MSA -> (r, r, c)
 r = # amino-acids
 c = r-r feature (distance) = 64
+
+Detailed Algorithms are on SI 1.2 - 1.5
