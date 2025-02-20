@@ -3,10 +3,15 @@ import torch.nn as nn
 
 import numpy as np
 
+
+
+
 s = None
 r = None
 c_m = 256
 c_z = 128
+
+
 
 
 class MSARowAttentionWithPairBias(nn.Module):
@@ -24,24 +29,24 @@ class MSARowAttentionWithPairBias(nn.Module):
             })
             for i in range(N_head)
         ])
-        self.output    = nn.Linear(in_features = c * N_head, out_features = c_m)
+        self.output = nn.Linear(in_features = c * N_head, out_features = c_m)
 
     def forward(self, msa, pair, c = 32):
         output_list = []
 
         for i, group in enumerate(self.stacks_group):
-            msa = group['norm_msa'](msa)
-            q = group['qkv'](msa)  
-            k = group['qkv'](msa)
-            v = group['qkv'](msa)
+            msa  = group['norm_msa'](msa)
+            q    = group['qkv'](msa)  
+            k    = group['qkv'](msa)
+            v    = group['qkv'](msa)
             pair = pair.view(-1, c_z)
-            b = group['bias'](group['norm_pair'](pair))
-            b = b.view(s, r, r)
-            g = group['sigmoid'](group['linear_g'](msa))
+            b    = group['bias'](group['norm_pair'](pair))
+            b    = b.view(s, r, r)
+            g    = group['sigmoid'](group['linear_g'](msa))
             
             plus_bias = (1/np.sqrt(c)) * (torch.matmul(q, k.transpose(1, 2)) + b)
-            a = group['softmax'](plus_bias)
-            o = torch.multiply(g, torch.matmul(a, v))
+            a    = group['softmax'](plus_bias)
+            o    = torch.multiply(g, torch.matmul(a, v))
 
             output_list.append(o)
 
@@ -49,6 +54,8 @@ class MSARowAttentionWithPairBias(nn.Module):
         msa_ = self.output(output)
         
         return msa_
+
+
 
 
 class MSAColumnAttention(nn.Module):
@@ -64,46 +71,71 @@ class MSAColumnAttention(nn.Module):
             })
             for i in range(N_head)
         ])
-        self.output    = nn.Linear(in_features = c * N_head, out_features = c_m)
+        self.output = nn.Linear(in_features = c * N_head, out_features = c_m)
 
     def forward(self, msa, c = 32):
         output_list = []
         msa = msa.permute(1, 0, 2)
+
         for i, group in enumerate(self.stacks_group):
             msa = group['norm_msa'](msa)
-            q = group['qkv'](msa)  
-            k = group['qkv'](msa)
-            v = group['qkv'](msa)
-            g = group['sigmoid'](group['linear_g'](msa))
+            q   = group['qkv'](msa)  
+            k   = group['qkv'](msa)
+            v   = group['qkv'](msa)
+            g   = group['sigmoid'](group['linear_g'](msa))
             
             in_softmax = (1/np.sqrt(c)) * (torch.matmul(q, k.transpose(1,2)))
-            a = group['softmax'](in_softmax)
-            o = torch.multiply(g, torch.matmul(a, v))
+            a   = group['softmax'](in_softmax)
+            o   = torch.multiply(g, torch.matmul(a, v))
 
             output_list.append(o)
 
-        output = torch.cat(output_list, dim = 2)
-        msa_ = self.output(output).permute(1, 0, 2)
+        output  = torch.cat(output_list, dim = 2)
+        msa_    = self.output(output).permute(1, 0, 2)
         
+        return msa_ 
+
+
+
+
+class MSATranslation(nn.Module):
+    def __init__(self, n = 4):
+        super(MSATranslation, self).__init__()
+        self.norm = nn.LayerNorm(normalized_shape = c_m)
+        self.linear1 = nn.Linear(in_features = c_m, out_features = n * c_m)
+        self.relu = nn.ReLU()
+        self.linear2 = nn.Linear(in_features = n * c_m, out_features = c_m)
+
+    def forward(self, msa):
+        msa = self.norm(msa)
+        msa = self.linear1(msa)
+        msa = self.relu(msa)
+        msa_ = self.linear2(msa)
+
         return msa_
 
 
-class MSA_translation(nn.Module):
-    def __init__(self,):
-        super(MSA_translation, self).__init__()
-        pass
-
-    def forward(self,):
-        pass
 
 
-class Outer_product_mean(nn.Module):
-    def __init__(self,):
-        super(Outer_product_mean, self).__init__()
-        pass
+class OuterProductMean(nn.Module):
+    def __init__(self, c = 32):
+        super(OuterProductMean, self).__init__()
+        self.norm = nn.LayerNorm(normalized_shape = c_m)
+        self.linear_ab = nn.Linear(in_features = c_m, out_features = c)
+        self.linear = nn.Linear(in_features = c ** 2, out_features = c_z)
 
-    def forward(self,):
-        pass
+    def forward(self, msa):
+        msa = msa.permute(1, 0, 2)
+        msa = self.norm(msa)
+        a = self.linear_ab(msa)
+        b = self.linear_ab(msa) 
+        o = torch.flatten(input = torch.mean(input = torch.einsum('rsx,rsy->rsxy',a, b), dim = 1), start_dim = 1, end_dim = 2)
+        pre_pair = self.linear(o)
+        pair_ = pre_pair.unsqueeze(1).expand(r, r, c_z)
+        
+        return pair_
+
+
 
 
 class Triangular_multiplicative_update(nn.Module):
