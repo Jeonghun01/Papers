@@ -1,1 +1,1 @@
-### Read the paper and implement it
+### Reading the paper and implement it
