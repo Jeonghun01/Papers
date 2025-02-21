@@ -5,6 +5,7 @@ import numpy as np
 
 
 
+
 s           = 50  # random
 r           = 100 # random
 c_m         = 256 # on paper
