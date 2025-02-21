@@ -5,11 +5,19 @@ import numpy as np
 
 
 
+s           = None
+r           = None
+c_m         = 256
+c_z         = 128
 
-s = None
-r = None
-c_m = 256
-c_z = 128
+"""
+        s      = sequence (protein)
+        r      = #amino acids
+        c_m    = msa feature
+        c_z    = pair feature
+        c      = layer units
+        N_head = #self-attention
+"""
 
 
 
@@ -20,7 +28,9 @@ class MSARowAttentionWithPairBias(nn.Module):
         self.stacks_group = nn.ModuleList([
             nn.ModuleDict({
                 'norm_msa'  : nn.LayerNorm(normalized_shape = c_m),
-                'qkv'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_q'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_k'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_v'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
                 'norm_pair' : nn.LayerNorm(normalized_shape = c_z),
                 'bias'      : nn.Linear(in_features = c_z, out_features = s, bias = False),
                 'linear_g'  : nn.Linear(in_features = c_m, out_features = c, bias = False),
@@ -36,9 +46,9 @@ class MSARowAttentionWithPairBias(nn.Module):
 
         for i, group in enumerate(self.stacks_group):
             msa  = group['norm_msa'](msa)
-            q    = group['qkv'](msa)  
-            k    = group['qkv'](msa)
-            v    = group['qkv'](msa)
+            q    = group['linear_q'](msa)  
+            k    = group['linear_k'](msa)
+            v    = group['linear_v'](msa)
             pair = pair.view(-1, c_z)
             b    = group['bias'](group['norm_pair'](pair))
             b    = b.view(s, r, r)
@@ -64,7 +74,9 @@ class MSAColumnAttention(nn.Module):
         self.stacks_group = nn.ModuleList([
             nn.ModuleDict({
                 'norm_msa'  : nn.LayerNorm(normalized_shape = c_m),
-                'qkv'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_q'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_k'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
+                'linear_v'       : nn.Linear(in_features = c_m, out_features = c, bias = False),
                 'linear_g'  : nn.Linear(in_features = c_m, out_features = c, bias = False),
                 'sigmoid'   : nn.Sigmoid(),
                 'softmax'   : nn.Softmax(dim = -2)
@@ -79,9 +91,9 @@ class MSAColumnAttention(nn.Module):
 
         for i, group in enumerate(self.stacks_group):
             msa = group['norm_msa'](msa)
-            q   = group['qkv'](msa)  
-            k   = group['qkv'](msa)
-            v   = group['qkv'](msa)
+            q   = group['linear_q'](msa)  
+            k   = group['linear_k'](msa)
+            v   = group['linear_v'](msa)
             g   = group['sigmoid'](group['linear_g'](msa))
             
             in_softmax = (1/np.sqrt(c)) * (torch.matmul(q, k.transpose(1,2)))
@@ -138,22 +150,75 @@ class OuterProductMean(nn.Module):
 
 
 
-class Triangular_multiplicative_update(nn.Module):
+class TriangularMultiplicationOutgoing(nn.Module):
+    def __init__(self, c = 128):
+        super(TriangularMultiplicationOutgoing, self).__init__()
+        self.norm1 = nn.LayerNorm(normalized_shape = c_z)
+        self.linear_a = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_b = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_sigmoid_a = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_sigmoid_b = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_sigmoid_g = nn.Linear(in_features = c_z, out_features = c_z)
+        self.sigmoid_a = nn.Sigmoid()
+        self.sigmoid_b = nn.Sigmoid()
+        self.sigmoid_g = nn.Sigmoid()
+        self.norm2 = nn.LayerNorm(normalized_shape = c)
+        self.linear_out = nn.Linear(in_features = c, out_features = c_z)
+
+    def forward(self, pair):
+        pair = self.norm1(pair)
+        a = torch.multiply(self.sigmoid_a(self.linear_sigmoid_a(pair)), self.linear_a(pair))
+        b = torch.multiply(self.sigmoid_b(self.linear_sigmoid_a(pair)), self.linear_b(pair))
+        g = self.sigmoid_g(self.linear_sigmoid_g(pair))
+        input = torch.sum(torch.multiply(a, b), dim = 1, keepdim = True)
+        pair_ = torch.multiply(g, self.linear_out(self.norm2(input)))
+
+        return pair_
+
+
+
+
+class TriangularMultiplicationIncoming(nn.Module):
+    def __init__(self, c = 128):
+        super(TriangularMultiplicationOutgoing, self).__init__()
+        self.norm1 = nn.LayerNorm(normalized_shape = c_z)
+        self.linear_a = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_b = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_sigmoid_a = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_sigmoid_b = nn.Linear(in_features = c_z, out_features = c)
+        self.linear_sigmoid_g = nn.Linear(in_features = c_z, out_features = c_z)
+        self.sigmoid_a = nn.Sigmoid()
+        self.sigmoid_b = nn.Sigmoid()
+        self.sigmoid_g = nn.Sigmoid()
+        self.norm2 = nn.LayerNorm(normalized_shape = c)
+        self.linear_out = nn.Linear(in_features = c, out_features = c_z)
+
+    def forward(self, pair):
+        pair = self.norm1(pair)
+        a = torch.multiply(self.sigmoid_a(self.linear_sigmoid_a(pair)), self.linear_a(pair))
+        b = torch.multiply(self.sigmoid_b(self.linear_sigmoid_a(pair)), self.linear_b(pair))
+        g = self.sigmoid_g(self.linear_sigmoid_g(pair))
+        input = torch.sum(torch.multiply(a, b).permute(1, 0, 2), dim = 1, keepdim = True).permute(1, 0, 2)
+        pair_ = torch.multiply(g, self.linear_out(self.norm2(input)))
+
+        return pair_
+
+
+
+
+
+class TriangularAttentionStartingNode(nn.Module):
     def __init__(self,):
-        super(Triangular_multiplicative_update, self).__init__()
-        pass
+        super(TriangularAttentionStartingNode, self).__init__()
+        
 
     def forward(self,):
         pass
 
 
-class Triangular_self_attention(nn.Module):
-    def __init__(self,):
-        super(Triangular_self_attention, self).__init__()
-        pass
 
-    def forward(self,):
-        pass
+
+
 
 
 class Translation_in_the_pair_stack(nn.Module):
