@@ -69,6 +69,43 @@ class BackboneUpdate(nn.Module):
 
 
 
+class getTorsionAngles(nn.Module):
+    def __init__(self, c = 128, n_torsion = 7):
+        super(getTorsionAngles, self).__init__()
+        self.torsion_groups = nn.ModuleList([
+            nn.ModuleDict({
+                'linear_msa_s' : nn.Linear(in_features = c, out_features = c),
+                'linear_imsa_s' : nn.Linear(in_features = c_m, out_features = c),
+                'linear1'      : nn.Linear(in_features = c, out_features = c),
+                'linear2'      : nn.Linear(in_features = c, out_features = c),
+                'linear3'      : nn.Linear(in_features = c, out_features = c),
+                'linear4'      : nn.Linear(in_features = c, out_features = c),
+                'linear_out'    : nn.Linear(in_features = c, out_features = 2),
+                'relu1'         : nn.ReLU(),
+                'relu2'         : nn.ReLU(),
+                'relu3'         : nn.ReLU(),
+                'relu4'         : nn.ReLU(),
+                'relu_out'      : nn.ReLU()
+            })
+            for i in range(n_torsion)
+        ])
+    
+    def forward(self, msa_s, imsa_s):
+        torsion_tuple = ()
+
+        for i, group in enumerate(self.torsion_groups):
+            a = group['linear_msa_s'](msa_s) + group['linear_imsa_s'](imsa_s)
+            a = a + group['linear2'](group['relu2'](group['linear1'](group['relu1'](a))))
+            a = a + group['linear4'](group['relu4'](group['linear3'](group['relu3'](a))))
+            a = group['linear_out'](group['relu_out'](a))
+            
+            torsion_tuple += (a,)
+        
+        return torsion_tuple
+
+
+
+
 # Todo - When make full model
 class computeAllAtomCoordinates(nn.Module):
     def __init__(self,):
