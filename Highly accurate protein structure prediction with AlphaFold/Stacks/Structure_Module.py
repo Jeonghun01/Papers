@@ -8,21 +8,26 @@ c_m         = 256 # on paper
 c_z         = 128 # on paper
 
 
-"""
-       
-"""
-
 
 
 # todo - solve point dimesion problem
 class InvariantPointAttention(nn.Module):
     def __init__(self, N_head = 12, c= 16, N_q = 4, N_v = 8):
         super(InvariantPointAttention, self).__init__()
-        pass
-
     def forward(self, msa_s, pair, T):
-        pass
+        return msa_s
 
+
+
+
+class Transition(nn.Module):
+    def __init__(self, c = 128):
+        super(Transition, self).__init__()
+        self.dropout = nn.Dropout(p = 0.1)
+        self.norm    = nn.LayerNorm(normalized_shape = c)
+    
+    def forward(self, msa_s):
+        return self.norm(self.dropout(msa_s))
 
 
 
@@ -62,6 +67,7 @@ class BackboneUpdate(nn.Module):
                             torch.multiply(a, a) - torch.multiply(b, b) - torch.multiply(c, c) + torch.multiply(d, d)
                          ])
                         ])
+        R = R.squeeze(dim = -1).permute(2, 0, 1)
         T_ = (R, t)
 
         return T_
