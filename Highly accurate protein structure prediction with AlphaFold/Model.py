@@ -98,5 +98,37 @@ class Structure_Module(nn.Module):
         R, x = T
         L_aux = computeFAPE(T, x, T_t, x_t, epsilon = 1e-12) + torsionAngleLoss(angles, angles_t, angles_at)
 
-        return L_aux, T, msa_s
+        return L_aux, x, msa_s
 
+
+
+
+class Model(nn.Module):
+    def __init__(self, N_evoformer = 48, c_m = 256, c_z = 128, c_s = 128):
+        super(Model, self).__init__
+        self.Evoformer_groups = nn.ModuleList([Evoformer()] for i in range(N_evoformer))
+        self.Structure_Module = Structure_Module()
+        self.norm_pair        = nn.LayerNorm(normalized_shape = c_z)
+        self.linear_msa_s     = nn.Linear(in_features = c_m, out_features = c_s)
+
+    def __init__(self, msa, pair, T_t, x_t, angles_t, angles_at, N_sm = 8):
+
+        for evoformer in self.Evoformer_groups:
+            msa, pair = evoformer(msa, pair)
+        
+        imsa_s = msa[1,:,:]
+        pair   = self.norm_pair(pair)
+        msa_s  = self.linear_msa_s(imsa_s)
+        T = (torch.Tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), torch.zeros((0,0)))
+
+        L_aux_list = []
+        for i in range(N_sm):
+            L_aux, x, msa_s = self.Structure_Module(imsa_s, msa_s, pair, T, T_t, x_t, angles_t, angles_at)
+            L_aux_list.append(L_aux)
+            if i != N_sm - 1:
+                T = (torch.Tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), x)
+        
+        L_aux = np.mean(L_aux_list)
+
+        #todo computeAllAtom and renameSymmetic 
+        #get Loss predict
