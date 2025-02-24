@@ -10,7 +10,7 @@ c_z         = 128 # on paper
 
 
 
-# todo - solve point dimesion problem
+# todo - solve point dimesion problem / will do after study 3D modeling
 class InvariantPointAttention(nn.Module):
     def __init__(self, N_head = 12, c= 16, N_q = 4, N_v = 8):
         super(InvariantPointAttention, self).__init__()
@@ -32,12 +32,12 @@ class Transition(nn.Module):
 
 
 class BackboneUpdate(nn.Module):
-    def __init__(self,):
+    def __init__(self, c = 128):
         super(BackboneUpdate, self).__init__()
-        self.linear_b = nn.Linear(in_features = c_m, out_features = 1)
-        self.linear_c = nn.Linear(in_features = c_m, out_features = 1)
-        self.linear_d = nn.Linear(in_features = c_m, out_features = 1)
-        self.linear_t = nn.Linear(in_features = c_m, out_features = 3)
+        self.linear_b = nn.Linear(in_features = c, out_features = 1)
+        self.linear_c = nn.Linear(in_features = c, out_features = 1)
+        self.linear_d = nn.Linear(in_features = c, out_features = 1)
+        self.linear_t = nn.Linear(in_features = c, out_features = 3)
 
     def forward(self, msa_s):
         b = self.linear_b(msa_s)
@@ -97,7 +97,7 @@ class getTorsionAngles(nn.Module):
         ])
     
     def forward(self, msa_s, imsa_s):
-        torsion_tuple = ()
+        angles_ = ()
 
         for i, group in enumerate(self.torsion_groups):
             a = group['linear_msa_s'](msa_s) + group['linear_imsa_s'](imsa_s)
@@ -105,9 +105,9 @@ class getTorsionAngles(nn.Module):
             a = a + group['linear4'](group['relu4'](group['linear3'](group['relu3'](a))))
             a = group['linear_out'](group['relu_out'](a))
             
-            torsion_tuple += (a,)
+            angles_ += (a,)
         
-        return torsion_tuple
+        return angles_
 
 
 
