@@ -9,4 +9,5 @@ MSA -> (r, r, c)
 r = # amino-acids
 c = r-r feature (distance) = 64
 
+After train test, will do data engineering
 Detailed Algorithms are on SI 1.2 - 1.5
