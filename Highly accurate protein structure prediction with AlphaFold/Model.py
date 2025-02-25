@@ -98,7 +98,7 @@ class Structure_Module(nn.Module):
         R, x = T
         L_aux = computeFAPE(T, x, T_t, x_t, epsilon = 1e-12) + torsionAngleLoss(angles, angles_t, angles_at)
 
-        return L_aux, T, msa_s
+        return L_aux, T, msa_s, angles
 
 
 
@@ -123,13 +123,12 @@ class Model(nn.Module):
 
         L_aux_list = []
         for i in range(N_sm):
-            L_aux, T, msa_s = self.Structure_Module(imsa_s, msa_s, pair, T, T_t, x_t, angles_t, angles_at)
+            L_aux, T, msa_s, angels = self.Structure_Module(imsa_s, msa_s, pair, T, T_t, x_t, angles_t, angles_at)
             L_aux_list.append(L_aux)
             if i != N_sm - 1:
                 T = (torch.eye(3).repeat(r, 1, 1), T[1])
         
         L_aux = np.mean(L_aux_list)
-        return L_aux, T, msa_s
 
-        #todo computeAllAtom and renameSymmetic 
+        #todo computeAllAtom and renameSymmetic - Should learn rigid translation first
         #get Loss predict

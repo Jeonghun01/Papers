@@ -112,7 +112,7 @@ class getTorsionAngles(nn.Module):
 
 
 
-# Todo - When make full model
+# Todo - Should learn rigid translation first
 class computeAllAtomCoordinates(nn.Module):
     def __init__(self,):
         super(computeAllAtomCoordinates, self).__init__()
