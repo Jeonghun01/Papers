@@ -117,7 +117,7 @@ class getTorsionAngles(nn.Module):
 class computeAllAtomCoordinates(nn.Module):
     def __init__(self,):
         super(computeAllAtomCoordinates, self).__init__()
-        # Dataset on PDB
+        # Data values on PDB, Alphafold
         self.Transformation_list = [(torch.Tensor([[0.980, 0.150, -0.127],[-0.150, 0.988, 0.040],[0.127, -0.040, 0.991]]), torch.Tensor([0.78, 0.34, 0.26])),
                                     (torch.Tensor([[0.992, -0.110, 0.045],[0.109, 0.994, 0.026],[-0.046, -0.025, 0.998]]), torch.Tensor([0.65, 0.20, -0.05])),
                                     (torch.Tensor([[0.987, 0.143, -0.064],[-0.143, 0.989, 0.029],[0.065, -0.028, 0.997]]), torch.Tensor([0.72, 0.25, -0.08])),
@@ -125,6 +125,14 @@ class computeAllAtomCoordinates(nn.Module):
                                     (torch.Tensor([[0.999, 0.021, -0.034],[-0.021, 0.998, 0.055],[0.034, -0.055, 0.998]]), torch.Tensor([1.10, 0.20, -0.08])),
                                     (torch.Tensor([[0.985, -0.171, 0.040],[0.170, 0.985, 0.043],[-0.041, -0.042, 0.999]]), torch.Tensor([1.24, 0.30, -0.05])),
                                     (torch.Tensor([[0.992, -0.125, 0.011],[0.124, 0.989, -0.073],[-0.020, 0.071, 0.997]]), torch.Tensor([1.05, 0.15, -0.12])) ]
+        self.CA_list = [torch.Tensor([1.458, 0.000, 0.000]),
+                        torch.Tensor([1.939, 1.524, 0.000]),
+                        torch.Tensor([1.939, 2.037, 1.207]),
+                        torch.Tensor([2.500, -0.500, -0.500]),
+                        torch.Tensor([2.800, 1.000, 0.000]),
+                        torch.Tensor([3.200, 1.500, 0.500]),
+                        torch.Tensor([3.500, 2.000, 1.000])]
+        
         def makeRotX(self, angle):
             R = torch.Tensor([[1, 0, 0],[0, angle[0], -angle[1]],[0, angle[1], angle[0]]])
             t = torch.Tensor([0,0,0])
@@ -145,10 +153,11 @@ class computeAllAtomCoordinates(nn.Module):
         
         for i in range(7):
             globals()[f"T{i + 1}"] = (torch.matmul(torch.matmul(T[0], self.Transformation_list[i][0]), angles_to_T_list[i][0]),
-                                  torch.matmul(torch.matmul(T[0], self.Transformation_list[i][0]), angles_to_T_list[i][1]) + 
-                                  torch.matmul(T[0], self.Transformation_list[i][1]) + T[1])
+                                  torch.matmul(torch.matmul(T[0], self.Transformation_list[i][0]), angles_to_T_list[i][1]) + torch.matmul(T[0], self.Transformation_list[i][1]) + T[1])
         
-        T = (T1, T2, T3, T4, T5, T6, T7)
+        T_f = (T1, T2, T3, T4, T5, T6, T7)
+        for T in T_f:
+            pass
         
         #todo get x value, and do rigid transformation, concat
 
