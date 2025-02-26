@@ -10,6 +10,8 @@ from Stacks.Evoformer import TriangularMultiplicationIncoming, TriangularMultipl
 from Stacks.Structure_Module import InvariantPointAttention, Transition, BackboneUpdate, getTorsionAngles
 from Loss import torsionAngleLoss, computeFAPE
 
+from Stacks.Structure_Module import computeAllAtomCoordinates
+
 
 class Evoformer(nn.Module):
     def __init__(self,):
@@ -110,6 +112,7 @@ class Model(nn.Module):
         self.Structure_Module = Structure_Module()
         self.norm_pair        = nn.LayerNorm(normalized_shape = c_z)
         self.linear_msa_s     = nn.Linear(in_features = c_m, out_features = c_s)
+        self.computAllAtomCoordinates = computeAllAtomCoordinates()
 
     def forward(self, msa, pair, T_t, x_t, angles_t, angles_at, N_sm = 8, r = 100):
 
@@ -123,12 +126,17 @@ class Model(nn.Module):
 
         L_aux_list = []
         for i in range(N_sm):
-            L_aux, T, msa_s, angels = self.Structure_Module(imsa_s, msa_s, pair, T, T_t, x_t, angles_t, angles_at)
+            L_aux, T, msa_s, angles = self.Structure_Module(imsa_s, msa_s, pair, T, T_t, x_t, angles_t, angles_at)
             L_aux_list.append(L_aux)
             if i != N_sm - 1:
                 T = (torch.eye(3).repeat(r, 1, 1), T[1])
         
         L_aux = np.mean(L_aux_list)
+        T_f, x_a = self.computAllAtomCoordinates(T, angles)
+        T_f_ = ()
+        for Tf in T_f:
+            T_n = torch.concat(T, Tf)
+            T_f_ += (T_n)
+        T_f = T_f_
 
-        #todo computeAllAtom and renameSymmetic - Should learn rigid translation first
-        #get Loss predict
+        
